@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.config import get_settings
+from app.routers import transcribe
 
 settings = get_settings()
 
@@ -8,6 +9,8 @@ app = FastAPI(
     description="Speech-to-Text and AI Processing Microservice for AI Meeting Knowledge Platform",
     version="0.1.0",
 )
+
+app.include_router(transcribe.router)
 
 
 @app.get("/")

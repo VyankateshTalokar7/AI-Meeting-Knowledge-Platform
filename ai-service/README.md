@@ -1,20 +1,23 @@
 # AI Service — Speech-to-Text & Processing Microservice
 
-FastAPI microservice foundation for handling audio transcription and future AI knowledge processing for the AI Meeting Knowledge Platform.
+FastAPI microservice for handling Speech-to-Text audio transcription (using OpenAI Whisper) and future AI knowledge processing for the AI Meeting Knowledge Platform.
 
 ## Prerequisites
 
-- Python 3.10+ (Tested on Python 3.13)
+- **Python 3.12+**
+- **FFmpeg** (Required for audio decoding by Whisper):
+  - macOS: `brew install ffmpeg`
+  - Ubuntu/Debian: `sudo apt update && sudo apt install -y ffmpeg`
 
 ## Quick Start (Local Setup)
 
 ### 1. Create Virtual Environment
 
-From the `ai-service/` directory, create and activate a Python virtual environment:
+From the `ai-service/` directory, create and activate a Python virtual environment using Python 3.12:
 
 ```bash
 cd ai-service
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -28,11 +31,14 @@ pip install -r requirements.txt
 
 ### 3. Environment Configuration
 
-Copy the example environment configuration to `.env`:
+Copy the example environment configuration to `.env` if not already present:
 
 ```bash
 cp .env.example .env
 ```
+
+Configurable options in `.env`:
+- `WHISPER_MODEL`: OpenAI Whisper model size (`tiny`, `base`, `small`, `medium`, `large`). Defaults to `tiny` for lightweight local development.
 
 ### 4. Run Development Server
 
@@ -52,11 +58,41 @@ Interactive Swagger API documentation is available at `http://localhost:8000/doc
 |--------|----------|-------------|
 | GET | `/` | Root endpoint displaying service metadata |
 | GET | `/health` | Health check endpoint returning service status |
+| POST | `/transcribe` | Upload an audio file to receive a Speech-to-Text transcript |
 
-## Running Tests
+### Example Request (`POST /transcribe`)
 
-Execute automated unit tests with `pytest`:
+```bash
+curl -X POST "http://localhost:8000/transcribe" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@/path/to/sample_audio.mp3"
+```
+
+### Example Response
+
+```json
+{
+  "filename": "sample_audio.mp3",
+  "text": "Welcome to the AI Meeting Knowledge Platform.",
+  "language": "en",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 3.12,
+      "text": "Welcome to the AI Meeting Knowledge Platform."
+    }
+  ]
+}
+```
+
+## Running Automated Tests
+
+Execute automated unit and integration tests with `pytest`:
 
 ```bash
 pytest
 ```
+
+*(Note: Unit tests use mocks for the Whisper model layer to run rapidly without downloading models or requiring heavy processing).*
