@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: ai-meeting-knowledge-backend
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+  servlet:
+    multipart:
+      max-file-size: ${MAX_UPLOAD_SIZE:50MB}
+      max-request-size: ${MAX_REQUEST_SIZE:50MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  storage:
+    audio-directory: ${AUDIO_STORAGE_DIRECTORY:uploads/audio}
+    max-file-size-bytes: ${AUDIO_MAX_FILE_SIZE_BYTES:52428800}
+    allowed-content-types:
+      - audio/mpeg
+      - audio/wav
+      - audio/x-wav
+      - audio/mp4
+      - audio/webm
