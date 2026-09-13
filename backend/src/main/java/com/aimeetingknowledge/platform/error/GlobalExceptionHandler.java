@@ -8,6 +8,7 @@ import com.aimeetingknowledge.platform.meeting.audio.AudioFileTooLargeException;
 import com.aimeetingknowledge.platform.meeting.audio.AudioNotFoundException;
 import com.aimeetingknowledge.platform.meeting.audio.MissingAudioFileException;
 import com.aimeetingknowledge.platform.meeting.audio.UnsupportedAudioTypeException;
+import com.aimeetingknowledge.platform.meeting.transcript.TranscriptNotFoundException;
 import com.aimeetingknowledge.platform.user.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -62,6 +63,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AudioNotFoundException.class)
     public ResponseEntity<ApiError> handleAudioNotFound(AudioNotFoundException exception, HttpServletRequest request) {
+        return response(HttpStatus.NOT_FOUND, exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(TranscriptNotFoundException.class)
+    public ResponseEntity<ApiError> handleTranscriptNotFound(TranscriptNotFoundException exception, HttpServletRequest request) {
         return response(HttpStatus.NOT_FOUND, exception.getMessage(), request, Map.of());
     }
 
