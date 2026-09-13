@@ -86,6 +86,11 @@ public class Meeting {
         return status;
     }
 
+    public void setStatus(MeetingStatus status) {
+        this.status = status;
+    }
+
+
     public Instant getCreatedAt() {
         return createdAt;
     }

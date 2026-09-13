@@ -6,8 +6,10 @@ import com.aimeetingknowledge.platform.user.User;
 import com.aimeetingknowledge.platform.user.UserNotFoundException;
 import com.aimeetingknowledge.platform.user.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 
 @Service
 public class MeetingService {
@@ -46,6 +48,15 @@ public class MeetingService {
         return meetingRepository.findByIdAndUser(id, currentUser(email))
                 .orElseThrow(MeetingNotFoundException::new);
     }
+
+    @Transactional
+    public void updateMeetingStatus(Long meetingId, MeetingStatus status) {
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(MeetingNotFoundException::new);
+        meeting.setStatus(status);
+        meetingRepository.save(meeting);
+    }
+
 
     private User currentUser(String email) {
         return userRepository.findByEmail(email)

@@ -3,6 +3,8 @@ package com.aimeetingknowledge.platform.meeting.audio;
 import com.aimeetingknowledge.platform.meeting.Meeting;
 import com.aimeetingknowledge.platform.meeting.MeetingNotFoundException;
 import com.aimeetingknowledge.platform.meeting.MeetingService;
+import com.aimeetingknowledge.platform.meeting.MeetingStatus;
+import com.aimeetingknowledge.platform.meeting.audio.event.TranscriptionRequestedEvent;
 import com.aimeetingknowledge.platform.user.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.Instant;
@@ -30,6 +33,7 @@ class MeetingAudioServiceTest {
     @Mock private MeetingService meetingService;
     @Mock private MeetingAudioRepository meetingAudioRepository;
     @Mock private AudioStorageService audioStorageService;
+    @Mock private ApplicationEventPublisher eventPublisher;
     @InjectMocks private MeetingAudioService meetingAudioService;
 
     @Test
@@ -46,6 +50,13 @@ class MeetingAudioServiceTest {
 
         ArgumentCaptor<MeetingAudio> audioCaptor = ArgumentCaptor.forClass(MeetingAudio.class);
         verify(meetingAudioRepository).save(audioCaptor.capture());
+        verify(meetingService).updateMeetingStatus(meeting.getId(), MeetingStatus.PROCESSING);
+
+        ArgumentCaptor<TranscriptionRequestedEvent> eventCaptor = ArgumentCaptor.forClass(TranscriptionRequestedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().meetingId()).isEqualTo(meeting.getId());
+        assertThat(eventCaptor.getValue().storagePath()).isEqualTo(stored.storagePath());
+
         assertThat(audioCaptor.getValue().getMeeting()).isSameAs(meeting);
         assertThat(audioCaptor.getValue().getStoredFilename()).isEqualTo("safe-id.mp3");
         assertThat(response.originalFilename()).isEqualTo("recording.mp3");
