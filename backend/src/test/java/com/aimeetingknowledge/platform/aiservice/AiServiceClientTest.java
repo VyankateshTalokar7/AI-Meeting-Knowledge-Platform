@@ -1,5 +1,6 @@
 package com.aimeetingknowledge.platform.aiservice;
 
+import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.TranscriptionResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,5 +90,51 @@ class AiServiceClientTest {
         assertThatThrownBy(() -> client.transcribeAudio(tempDir.resolve("non-existent.wav").toString()))
                 .isInstanceOf(AiServiceException.class)
                 .hasMessageContaining("Audio file not found");
+    }
+
+    @Test
+    void successfulAnalyzeCallParsesResponse() {
+        String mockJsonResponse = """
+                {
+                  "summary": "Meeting executive summary.",
+                  "key_topics": ["Topic 1", "Topic 2"],
+                  "decisions": ["Decision 1"],
+                  "action_items": [
+                    {
+                      "task": "Do something",
+                      "assignee": "Alice",
+                      "due_date": "2026-09-30"
+                    }
+                  ]
+                }
+                """;
+
+        mockServer.expect(requestTo("http://localhost:8000/analyze"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header(HttpHeaders.CONTENT_TYPE, Matchers.startsWith(MediaType.APPLICATION_JSON_VALUE)))
+                .andRespond(withSuccess(mockJsonResponse, MediaType.APPLICATION_JSON));
+
+        MeetingAnalysisResponse response = client.analyzeMeeting("Meeting transcript text.");
+
+        assertThat(response.summary()).isEqualTo("Meeting executive summary.");
+        assertThat(response.keyTopics()).containsExactly("Topic 1", "Topic 2");
+        assertThat(response.decisions()).containsExactly("Decision 1");
+        assertThat(response.actionItems()).hasSize(1);
+        assertThat(response.actionItems().get(0).task()).isEqualTo("Do something");
+        assertThat(response.actionItems().get(0).assignee()).isEqualTo("Alice");
+        assertThat(response.actionItems().get(0).dueDate()).isEqualTo("2026-09-30");
+        mockServer.verify();
+    }
+
+    @Test
+    void throwsAiServiceExceptionWhenAnalyzeFails() {
+        mockServer.expect(requestTo("http://localhost:8000/analyze"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withServerError());
+
+        assertThatThrownBy(() -> client.analyzeMeeting("Transcript text."))
+                .isInstanceOf(AiServiceException.class)
+                .hasMessageContaining("Failed to call AI meeting analysis service");
+        mockServer.verify();
     }
 }

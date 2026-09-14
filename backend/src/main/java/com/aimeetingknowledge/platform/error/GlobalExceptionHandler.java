@@ -8,6 +8,7 @@ import com.aimeetingknowledge.platform.meeting.audio.AudioFileTooLargeException;
 import com.aimeetingknowledge.platform.meeting.audio.AudioNotFoundException;
 import com.aimeetingknowledge.platform.meeting.audio.MissingAudioFileException;
 import com.aimeetingknowledge.platform.meeting.audio.UnsupportedAudioTypeException;
+import com.aimeetingknowledge.platform.meeting.knowledge.MeetingKnowledgeNotFoundException;
 import com.aimeetingknowledge.platform.meeting.transcript.TranscriptNotFoundException;
 import com.aimeetingknowledge.platform.user.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,6 +69,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TranscriptNotFoundException.class)
     public ResponseEntity<ApiError> handleTranscriptNotFound(TranscriptNotFoundException exception, HttpServletRequest request) {
+        return response(HttpStatus.NOT_FOUND, exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(MeetingKnowledgeNotFoundException.class)
+    public ResponseEntity<ApiError> handleKnowledgeNotFound(MeetingKnowledgeNotFoundException exception, HttpServletRequest request) {
         return response(HttpStatus.NOT_FOUND, exception.getMessage(), request, Map.of());
     }
 

@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisResponse;
+import com.aimeetingknowledge.platform.meeting.knowledge.MeetingKnowledgeService;
+
 @Service
 public class MeetingTranscriptionProcessor {
 
@@ -20,17 +23,20 @@ public class MeetingTranscriptionProcessor {
     private final MeetingService meetingService;
     private final AiServiceClient aiServiceClient;
     private final TranscriptionResultHandler transcriptionResultHandler;
+    private final MeetingKnowledgeService meetingKnowledgeService;
 
     public MeetingTranscriptionProcessor(
             MeetingRepository meetingRepository,
             MeetingService meetingService,
             AiServiceClient aiServiceClient,
-            TranscriptionResultHandler transcriptionResultHandler
+            TranscriptionResultHandler transcriptionResultHandler,
+            MeetingKnowledgeService meetingKnowledgeService
     ) {
         this.meetingRepository = meetingRepository;
         this.meetingService = meetingService;
         this.aiServiceClient = aiServiceClient;
         this.transcriptionResultHandler = transcriptionResultHandler;
+        this.meetingKnowledgeService = meetingKnowledgeService;
     }
 
     @Async("taskExecutor")
@@ -40,6 +46,10 @@ public class MeetingTranscriptionProcessor {
             Meeting meeting = meetingRepository.findById(meetingId)
                     .orElseThrow(() -> new IllegalStateException("Meeting not found for ID " + meetingId));
             transcriptionResultHandler.handleResult(meeting, response);
+
+            MeetingAnalysisResponse analysisResponse = aiServiceClient.analyzeMeeting(response.text());
+            meetingKnowledgeService.saveKnowledgeFromAnalysis(meeting, analysisResponse);
+
             meetingService.updateMeetingStatus(meetingId, MeetingStatus.COMPLETED);
         } catch (Exception exc) {
             log.error("Transcription processing failed for meeting ID {}: {}", meetingId, exc.getMessage());

@@ -24,6 +24,13 @@ class Settings(BaseSettings):
         "audio/ogg",
     ]
 
+    # LLM configuration
+    openrouter_api_key: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
+    openrouter_timeout_seconds: float = 60.0
+    max_analysis_transcript_chars: int = 100000
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

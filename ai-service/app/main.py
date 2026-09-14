@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.config import get_settings
-from app.routers import transcribe
+from app.routers import analyze, transcribe
 
 settings = get_settings()
 
@@ -11,6 +11,7 @@ app = FastAPI(
 )
 
 app.include_router(transcribe.router)
+app.include_router(analyze.router)
 
 
 @app.get("/")

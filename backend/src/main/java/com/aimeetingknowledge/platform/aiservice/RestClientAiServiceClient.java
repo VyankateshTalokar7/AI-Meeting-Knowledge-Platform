@@ -1,5 +1,7 @@
 package com.aimeetingknowledge.platform.aiservice;
 
+import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisRequest;
+import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.TranscriptionResponse;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
@@ -56,6 +58,25 @@ public class RestClientAiServiceClient implements AiServiceClient {
             return response;
         } catch (RestClientException exc) {
             throw new AiServiceException("Failed to call AI transcription service.", exc);
+        }
+    }
+
+    @Override
+    public MeetingAnalysisResponse analyzeMeeting(String text) {
+        try {
+            MeetingAnalysisResponse response = restClient.post()
+                    .uri("/analyze")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new MeetingAnalysisRequest(text))
+                    .retrieve()
+                    .body(MeetingAnalysisResponse.class);
+
+            if (response == null) {
+                throw new AiServiceException("Received empty response from AI analysis service.");
+            }
+            return response;
+        } catch (RestClientException exc) {
+            throw new AiServiceException("Failed to call AI meeting analysis service.", exc);
         }
     }
 }

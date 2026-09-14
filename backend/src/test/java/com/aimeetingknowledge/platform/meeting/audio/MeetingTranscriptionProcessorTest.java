@@ -2,12 +2,14 @@ package com.aimeetingknowledge.platform.meeting.audio;
 
 import com.aimeetingknowledge.platform.aiservice.AiServiceClient;
 import com.aimeetingknowledge.platform.aiservice.AiServiceException;
+import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.SegmentResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.TranscriptionResponse;
 import com.aimeetingknowledge.platform.meeting.Meeting;
 import com.aimeetingknowledge.platform.meeting.MeetingRepository;
 import com.aimeetingknowledge.platform.meeting.MeetingService;
 import com.aimeetingknowledge.platform.meeting.MeetingStatus;
+import com.aimeetingknowledge.platform.meeting.knowledge.MeetingKnowledgeService;
 import com.aimeetingknowledge.platform.user.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,19 +34,23 @@ class MeetingTranscriptionProcessorTest {
     @Mock private MeetingService meetingService;
     @Mock private AiServiceClient aiServiceClient;
     @Mock private TranscriptionResultHandler transcriptionResultHandler;
+    @Mock private MeetingKnowledgeService meetingKnowledgeService;
     @InjectMocks private MeetingTranscriptionProcessor processor;
 
     @Test
-    void successfulTranscriptionUpdatesStatusToCompleted() {
+    void successfulTranscriptionAndAnalysisUpdatesStatusToCompleted() {
         Meeting meeting = new Meeting(new User("User", "user@example.com", "hash"), "Sync", null, Instant.now());
-        TranscriptionResponse response = sampleResponse();
+        TranscriptionResponse transcriptionResponse = sampleResponse();
+        MeetingAnalysisResponse analysisResponse = new MeetingAnalysisResponse("Summary", List.of(), List.of(), List.of());
 
-        when(aiServiceClient.transcribeAudio("/path/audio.mp3")).thenReturn(response);
+        when(aiServiceClient.transcribeAudio("/path/audio.mp3")).thenReturn(transcriptionResponse);
         when(meetingRepository.findById(1L)).thenReturn(Optional.of(meeting));
+        when(aiServiceClient.analyzeMeeting("Hello world")).thenReturn(analysisResponse);
 
         processor.processTranscription(1L, "/path/audio.mp3");
 
-        verify(transcriptionResultHandler).handleResult(meeting, response);
+        verify(transcriptionResultHandler).handleResult(meeting, transcriptionResponse);
+        verify(meetingKnowledgeService).saveKnowledgeFromAnalysis(meeting, analysisResponse);
         verify(meetingService).updateMeetingStatus(1L, MeetingStatus.COMPLETED);
         verify(meetingService, never()).updateMeetingStatus(1L, MeetingStatus.FAILED);
     }
@@ -57,6 +63,27 @@ class MeetingTranscriptionProcessorTest {
         processor.processTranscription(1L, "/path/audio.mp3");
 
         verify(transcriptionResultHandler, never()).handleResult(any(), any());
+        verify(meetingKnowledgeService, never()).saveKnowledgeFromAnalysis(any(), any());
+        verify(meetingService).updateMeetingStatus(1L, MeetingStatus.FAILED);
+        verify(meetingService, never()).updateMeetingStatus(1L, MeetingStatus.COMPLETED);
+    }
+
+    @Test
+    void failedLlmAnalysisLeavesTranscriptStoredAndSetsStatusToFailed() {
+        Meeting meeting = new Meeting(new User("User", "user@example.com", "hash"), "Sync", null, Instant.now());
+        TranscriptionResponse transcriptionResponse = sampleResponse();
+
+        when(aiServiceClient.transcribeAudio("/path/audio.mp3")).thenReturn(transcriptionResponse);
+        when(meetingRepository.findById(1L)).thenReturn(Optional.of(meeting));
+        when(aiServiceClient.analyzeMeeting("Hello world")).thenThrow(new AiServiceException("LLM API failed"));
+
+        processor.processTranscription(1L, "/path/audio.mp3");
+
+        // Verify transcript persistence DID execute
+        verify(transcriptionResultHandler).handleResult(meeting, transcriptionResponse);
+        // Verify knowledge save was NOT called
+        verify(meetingKnowledgeService, never()).saveKnowledgeFromAnalysis(any(), any());
+        // Verify status becomes FAILED
         verify(meetingService).updateMeetingStatus(1L, MeetingStatus.FAILED);
         verify(meetingService, never()).updateMeetingStatus(1L, MeetingStatus.COMPLETED);
     }
@@ -90,7 +117,6 @@ class MeetingTranscriptionProcessorTest {
         verify(meetingService, never()).updateMeetingStatus(99L, MeetingStatus.COMPLETED);
         verify(transcriptionResultHandler, never()).handleResult(any(), any());
     }
-
 
     private TranscriptionResponse sampleResponse() {
         return new TranscriptionResponse(
