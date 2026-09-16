@@ -1,5 +1,7 @@
 package com.aimeetingknowledge.platform.aiservice;
 
+import com.aimeetingknowledge.platform.aiservice.dto.IndexTranscriptRequest;
+import com.aimeetingknowledge.platform.aiservice.dto.IndexTranscriptResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisRequest;
 import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.TranscriptionResponse;
@@ -77,6 +79,25 @@ public class RestClientAiServiceClient implements AiServiceClient {
             return response;
         } catch (RestClientException exc) {
             throw new AiServiceException("Failed to call AI meeting analysis service.", exc);
+        }
+    }
+
+    @Override
+    public IndexTranscriptResponse indexTranscript(IndexTranscriptRequest request) {
+        try {
+            IndexTranscriptResponse response = restClient.post()
+                    .uri("/index-transcript")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(IndexTranscriptResponse.class);
+
+            if (response == null) {
+                throw new AiServiceException("Received empty response from AI transcript indexing service.");
+            }
+            return response;
+        } catch (RestClientException exc) {
+            throw new AiServiceException("Failed to call AI transcript indexing service.", exc);
         }
     }
 }

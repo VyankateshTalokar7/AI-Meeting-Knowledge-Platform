@@ -31,6 +31,16 @@ class Settings(BaseSettings):
     openrouter_timeout_seconds: float = 60.0
     max_analysis_transcript_chars: int = 100000
 
+    # Vector Indexing / ChromaDB configuration
+    chroma_persist_directory: str = "./data/chroma"
+    chroma_collection_name: str = "transcript_chunks"
+    embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    chunk_target_size_chars: int = 700
+    chunk_max_size_chars: int = 1000
+    chunk_overlap_chars: int = 150
+    indexing_timeout_seconds: float = 60.0
+
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

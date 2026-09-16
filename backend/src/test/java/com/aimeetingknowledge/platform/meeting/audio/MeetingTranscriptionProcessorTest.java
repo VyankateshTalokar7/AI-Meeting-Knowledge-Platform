@@ -10,6 +10,9 @@ import com.aimeetingknowledge.platform.meeting.MeetingRepository;
 import com.aimeetingknowledge.platform.meeting.MeetingService;
 import com.aimeetingknowledge.platform.meeting.MeetingStatus;
 import com.aimeetingknowledge.platform.meeting.knowledge.MeetingKnowledgeService;
+import com.aimeetingknowledge.platform.meeting.transcript.MeetingTranscript;
+import com.aimeetingknowledge.platform.meeting.transcript.MeetingTranscriptRepository;
+import com.aimeetingknowledge.platform.meeting.transcript.TranscriptSegment;
 import com.aimeetingknowledge.platform.user.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,22 +38,50 @@ class MeetingTranscriptionProcessorTest {
     @Mock private AiServiceClient aiServiceClient;
     @Mock private TranscriptionResultHandler transcriptionResultHandler;
     @Mock private MeetingKnowledgeService meetingKnowledgeService;
+    @Mock private MeetingTranscriptRepository meetingTranscriptRepository;
     @InjectMocks private MeetingTranscriptionProcessor processor;
 
     @Test
-    void successfulTranscriptionAndAnalysisUpdatesStatusToCompleted() {
+    void successfulTranscriptionAnalysisAndIndexingUpdatesStatusToCompleted() {
         Meeting meeting = new Meeting(new User("User", "user@example.com", "hash"), "Sync", null, Instant.now());
         TranscriptionResponse transcriptionResponse = sampleResponse();
         MeetingAnalysisResponse analysisResponse = new MeetingAnalysisResponse("Summary", List.of(), List.of(), List.of());
+        MeetingTranscript transcript = new MeetingTranscript(meeting, "Hello world", "en");
+        transcript.addSegment(new TranscriptSegment(transcript, 0, 0.0, 1.5, "Hello world"));
 
         when(aiServiceClient.transcribeAudio("/path/audio.mp3")).thenReturn(transcriptionResponse);
         when(meetingRepository.findById(1L)).thenReturn(Optional.of(meeting));
         when(aiServiceClient.analyzeMeeting("Hello world")).thenReturn(analysisResponse);
+        when(meetingTranscriptRepository.findByMeeting(meeting)).thenReturn(Optional.of(transcript));
 
         processor.processTranscription(1L, "/path/audio.mp3");
 
         verify(transcriptionResultHandler).handleResult(meeting, transcriptionResponse);
         verify(meetingKnowledgeService).saveKnowledgeFromAnalysis(meeting, analysisResponse);
+        verify(aiServiceClient).indexTranscript(any());
+        verify(meetingService).updateMeetingStatus(1L, MeetingStatus.COMPLETED);
+        verify(meetingService, never()).updateMeetingStatus(1L, MeetingStatus.FAILED);
+    }
+
+    @Test
+    void indexingFailureDoesNotChangeCompletedStatus() {
+        Meeting meeting = new Meeting(new User("User", "user@example.com", "hash"), "Sync", null, Instant.now());
+        TranscriptionResponse transcriptionResponse = sampleResponse();
+        MeetingAnalysisResponse analysisResponse = new MeetingAnalysisResponse("Summary", List.of(), List.of(), List.of());
+        MeetingTranscript transcript = new MeetingTranscript(meeting, "Hello world", "en");
+        transcript.addSegment(new TranscriptSegment(transcript, 0, 0.0, 1.5, "Hello world"));
+
+        when(aiServiceClient.transcribeAudio("/path/audio.mp3")).thenReturn(transcriptionResponse);
+        when(meetingRepository.findById(1L)).thenReturn(Optional.of(meeting));
+        when(aiServiceClient.analyzeMeeting("Hello world")).thenReturn(analysisResponse);
+        when(meetingTranscriptRepository.findByMeeting(meeting)).thenReturn(Optional.of(transcript));
+        when(aiServiceClient.indexTranscript(any())).thenThrow(new AiServiceException("Vector store offline"));
+
+        processor.processTranscription(1L, "/path/audio.mp3");
+
+        verify(transcriptionResultHandler).handleResult(meeting, transcriptionResponse);
+        verify(meetingKnowledgeService).saveKnowledgeFromAnalysis(meeting, analysisResponse);
+        verify(aiServiceClient).indexTranscript(any());
         verify(meetingService).updateMeetingStatus(1L, MeetingStatus.COMPLETED);
         verify(meetingService, never()).updateMeetingStatus(1L, MeetingStatus.FAILED);
     }

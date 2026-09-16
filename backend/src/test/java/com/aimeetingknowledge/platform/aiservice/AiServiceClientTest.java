@@ -1,6 +1,9 @@
 package com.aimeetingknowledge.platform.aiservice;
 
+import com.aimeetingknowledge.platform.aiservice.dto.IndexTranscriptRequest;
+import com.aimeetingknowledge.platform.aiservice.dto.IndexTranscriptResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisResponse;
+import com.aimeetingknowledge.platform.aiservice.dto.SegmentDto;
 import com.aimeetingknowledge.platform.aiservice.dto.TranscriptionResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +19,7 @@ import org.springframework.web.client.RestClient;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -135,6 +139,54 @@ class AiServiceClientTest {
         assertThatThrownBy(() -> client.analyzeMeeting("Transcript text."))
                 .isInstanceOf(AiServiceException.class)
                 .hasMessageContaining("Failed to call AI meeting analysis service");
+        mockServer.verify();
+    }
+
+    @Test
+    void successfulIndexTranscriptCallParsesResponse() {
+        String mockJsonResponse = """
+                {
+                  "status": "indexed",
+                  "meeting_id": 10,
+                  "transcript_id": 20,
+                  "chunks_indexed": 3
+                }
+                """;
+
+        mockServer.expect(requestTo("http://localhost:8000/index-transcript"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header(HttpHeaders.CONTENT_TYPE, Matchers.startsWith(MediaType.APPLICATION_JSON_VALUE)))
+                .andRespond(withSuccess(mockJsonResponse, MediaType.APPLICATION_JSON));
+
+        IndexTranscriptRequest request = new IndexTranscriptRequest(
+                10L,
+                20L,
+                "en",
+                List.of(new SegmentDto(0, 0.0, 5.0, "Segment text"))
+        );
+
+        IndexTranscriptResponse response = client.indexTranscript(request);
+
+        assertThat(response.status()).isEqualTo("indexed");
+        assertThat(response.meetingId()).isEqualTo(10L);
+        assertThat(response.transcriptId()).isEqualTo(20L);
+        assertThat(response.chunksIndexed()).isEqualTo(3);
+        mockServer.verify();
+    }
+
+    @Test
+    void throwsAiServiceExceptionWhenIndexTranscriptFails() {
+        mockServer.expect(requestTo("http://localhost:8000/index-transcript"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withServerError());
+
+        IndexTranscriptRequest request = new IndexTranscriptRequest(
+                10L, 20L, "en", List.of()
+        );
+
+        assertThatThrownBy(() -> client.indexTranscript(request))
+                .isInstanceOf(AiServiceException.class)
+                .hasMessageContaining("Failed to call AI transcript indexing service");
         mockServer.verify();
     }
 }
