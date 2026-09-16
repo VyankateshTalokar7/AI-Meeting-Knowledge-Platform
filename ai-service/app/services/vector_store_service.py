@@ -201,3 +201,117 @@ class VectorStoreService:
             transcript_id=request.transcript_id,
             chunks_indexed=len(chunks),
         )
+
+    def search_similar_chunks(
+        self,
+        query: str,
+        allowed_meeting_ids: List[int],
+        top_k: int = 5,
+    ) -> List[Dict[str, Any]]:
+        if not allowed_meeting_ids:
+            return []
+
+        clean_ids = [int(mid) for mid in allowed_meeting_ids]
+        if not clean_ids:
+            return []
+
+        collection = self._get_collection()
+
+        if len(clean_ids) == 1:
+            where_clause = {"meeting_id": clean_ids[0]}
+        else:
+            where_clause = {"meeting_id": {"$in": clean_ids}}
+
+        model = get_embedding_model(self.settings.embedding_model_name)
+        query_embedding = model.encode([query], show_progress_bar=False)
+        if hasattr(query_embedding, "tolist"):
+            query_embedding = query_embedding.tolist()
+
+        try:
+            results = collection.query(
+                query_embeddings=query_embedding,
+                n_results=top_k,
+                where=where_clause,
+            )
+        except Exception as exc:
+            logger.warning(f"ChromaDB query error for meeting_ids {clean_ids}: {exc}")
+            return []
+
+        retrieved_chunks = []
+        if results and results.get("documents") and len(results["documents"]) > 0:
+            docs = results["documents"][0]
+            metas = results["metadatas"][0] if results.get("metadatas") else []
+            ids = results["ids"][0] if results.get("ids") else []
+            distances = results["distances"][0] if results.get("distances") else []
+
+            for idx in range(len(docs)):
+                meta = metas[idx] if idx < len(metas) else {}
+                retrieved_chunks.append({
+                    "id": ids[idx] if idx < len(ids) else f"chunk_{idx}",
+                    "text": docs[idx],
+                    "metadata": meta,
+                    "distance": float(distances[idx]) if idx < len(distances) else None,
+                })
+
+        return retrieved_chunks
+
+    async def perform_rag_search(
+        self,
+        query: str,
+        allowed_meeting_ids: List[int],
+        top_k: int = 5,
+        llm_service=None,
+    ):
+        from app.schemas.search import SearchResponse, SearchReference
+
+        if not allowed_meeting_ids:
+            return SearchResponse(
+                answer="No meeting knowledge is available because you have no meetings.",
+                references=[],
+                retrieved_chunks=[]
+            )
+
+        retrieved_chunks = self.search_similar_chunks(
+            query=query,
+            allowed_meeting_ids=allowed_meeting_ids,
+            top_k=top_k,
+        )
+
+        if not retrieved_chunks:
+            return SearchResponse(
+                answer="The requested information was not found in the available meeting knowledge.",
+                references=[],
+                retrieved_chunks=[]
+            )
+
+        context_blocks = []
+        for c in retrieved_chunks:
+            meta = c["metadata"]
+            header = f"[Meeting {meta.get('meeting_id')}, Chunk {meta.get('chunk_index')}, Time: {meta.get('start_time')}s-{meta.get('end_time')}s]"
+            context_blocks.append(f"{header}\n{c['text']}")
+
+        context_str = "\n\n".join(context_blocks)
+
+        references = []
+        for c in retrieved_chunks:
+            meta = c["metadata"]
+            references.append(SearchReference(
+                meeting_id=meta.get("meeting_id"),
+                transcript_id=meta.get("transcript_id"),
+                chunk_index=meta.get("chunk_index"),
+                start_time=meta.get("start_time"),
+                end_time=meta.get("end_time"),
+            ))
+
+        if llm_service is not None:
+            answer = await llm_service.generate_rag_answer(query=query, context=context_str)
+        else:
+            from app.services.llm_service import get_llm_service
+            svc = get_llm_service()
+            answer = await svc.generate_rag_answer(query=query, context=context_str)
+
+        return SearchResponse(
+            answer=answer,
+            references=references,
+            retrieved_chunks=retrieved_chunks
+        )

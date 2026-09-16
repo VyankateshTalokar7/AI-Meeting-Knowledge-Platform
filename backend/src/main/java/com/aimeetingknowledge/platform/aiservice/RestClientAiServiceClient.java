@@ -4,7 +4,10 @@ import com.aimeetingknowledge.platform.aiservice.dto.IndexTranscriptRequest;
 import com.aimeetingknowledge.platform.aiservice.dto.IndexTranscriptResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisRequest;
 import com.aimeetingknowledge.platform.aiservice.dto.MeetingAnalysisResponse;
+import com.aimeetingknowledge.platform.aiservice.dto.SearchAiServiceRequest;
+import com.aimeetingknowledge.platform.aiservice.dto.SearchAiServiceResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.TranscriptionResponse;
+
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -83,6 +86,7 @@ public class RestClientAiServiceClient implements AiServiceClient {
     }
 
     @Override
+
     public IndexTranscriptResponse indexTranscript(IndexTranscriptRequest request) {
         try {
             IndexTranscriptResponse response = restClient.post()
@@ -98,6 +102,25 @@ public class RestClientAiServiceClient implements AiServiceClient {
             return response;
         } catch (RestClientException exc) {
             throw new AiServiceException("Failed to call AI transcript indexing service.", exc);
+        }
+    }
+
+    @Override
+    public SearchAiServiceResponse search(SearchAiServiceRequest request) {
+        try {
+            SearchAiServiceResponse response = restClient.post()
+                    .uri("/search")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(SearchAiServiceResponse.class);
+
+            if (response == null) {
+                throw new AiServiceException("Received empty response from AI search service.");
+            }
+            return response;
+        } catch (RestClientException exc) {
+            throw new AiServiceException("Failed to call AI search service.", exc);
         }
     }
 }
