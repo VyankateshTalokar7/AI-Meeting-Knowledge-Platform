@@ -36,9 +36,10 @@ public class MeetingKnowledgeService {
 
     @Transactional
     public void saveKnowledgeFromAnalysis(Meeting meeting, MeetingAnalysisResponse analysis) {
-        if (meetingKnowledgeRepository.existsByMeeting(meeting)) {
-            return;
-        }
+        meetingKnowledgeRepository.findByMeeting(meeting).ifPresent(existing -> {
+            meetingKnowledgeRepository.delete(existing);
+            meetingKnowledgeRepository.flush();
+        });
 
         MeetingKnowledge knowledge = new MeetingKnowledge(meeting, analysis.summary());
 

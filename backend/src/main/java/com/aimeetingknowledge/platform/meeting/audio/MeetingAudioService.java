@@ -59,6 +59,15 @@ public class MeetingAudioService {
         }
     }
 
+    @Transactional
+    public MeetingAudioResponse reprocessAudio(Long meetingId, String email) {
+        MeetingAudio audio = findOwnedAudio(meetingId, email);
+        Meeting meeting = audio.getMeeting();
+        meetingService.updateMeetingStatus(meeting.getId(), MeetingStatus.PROCESSING);
+        eventPublisher.publishEvent(new TranscriptionRequestedEvent(meeting.getId(), audio.getStoragePath()));
+        return MeetingAudioResponse.from(audio);
+    }
+
     public MeetingAudioResponse getAudioMetadata(Long meetingId, String email) {
         return MeetingAudioResponse.from(findOwnedAudio(meetingId, email));
     }

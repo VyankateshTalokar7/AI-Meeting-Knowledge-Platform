@@ -50,14 +50,20 @@ public class MeetingTranscriptionProcessor {
 
     @Async("taskExecutor")
     public void processTranscription(Long meetingId, String filePath) {
+        log.info("Starting transcription processing for meeting ID: {}, audio path: {}", meetingId, filePath);
         try {
             TranscriptionResponse response = aiServiceClient.transcribeAudio(filePath);
+            log.info("Transcription completed for meeting ID {}", meetingId);
+
             Meeting meeting = meetingRepository.findById(meetingId)
                     .orElseThrow(() -> new IllegalStateException("Meeting not found for ID " + meetingId));
             transcriptionResultHandler.handleResult(meeting, response);
+            log.info("Transcription result stored for meeting ID {}", meetingId);
 
             MeetingAnalysisResponse analysisResponse = aiServiceClient.analyzeMeeting(response.text());
+            log.info("LLM analysis completed for meeting ID {}", meetingId);
             meetingKnowledgeService.saveKnowledgeFromAnalysis(meeting, analysisResponse);
+            log.info("Meeting knowledge stored for meeting ID {}", meetingId);
 
             try {
                 MeetingTranscript transcript = meetingTranscriptRepository.findByMeeting(meeting).orElse(null);
@@ -79,16 +85,18 @@ public class MeetingTranscriptionProcessor {
                     );
 
                     aiServiceClient.indexTranscript(indexRequest);
+                    log.info("Vector indexing completed for meeting ID {}", meetingId);
                 } else {
                     log.warn("MeetingTranscript not found for meeting ID {}, skipping vector indexing", meetingId);
                 }
             } catch (Exception indexingExc) {
-                log.warn("Vector indexing failed for meeting ID {}: {}", meetingId, indexingExc.getMessage());
+                log.warn("Vector indexing failed for meeting ID {}: {}", meetingId, indexingExc.getMessage(), indexingExc);
             }
 
             meetingService.updateMeetingStatus(meetingId, MeetingStatus.COMPLETED);
+            log.info("Meeting status updated to COMPLETED for meeting ID {}", meetingId);
         } catch (Exception exc) {
-            log.error("Transcription processing failed for meeting ID {}: {}", meetingId, exc.getMessage());
+            log.error("Transcription processing failed for meeting ID {}: {}", meetingId, exc.getMessage(), exc);
             try {
                 meetingService.updateMeetingStatus(meetingId, MeetingStatus.FAILED);
             } catch (Exception updateExc) {

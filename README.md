@@ -309,7 +309,7 @@ Key configuration variables used by FastAPI:
 * `WHISPER_MODEL`: Local Whisper model size (default: `tiny`).
 * `OPENROUTER_API_KEY`: API key for OpenRouter LLM access.
 * `OPENROUTER_BASE_URL`: OpenRouter base endpoint (default: `https://openrouter.ai/api/v1`).
-* `OPENROUTER_MODEL`: Model identifier (default: `meta-llama/llama-3.3-70b-instruct:free`).
+* `OPENROUTER_MODEL`: Model identifier (default: `nex-agi/nex-n2.5-mini:free`).
 * `MAX_ANALYSIS_TRANSCRIPT_CHARS`: Maximum safe transcript character limit (default: `100000`).
 
 ---

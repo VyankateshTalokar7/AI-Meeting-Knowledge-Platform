@@ -33,6 +33,11 @@ public class MeetingAudioController {
         return meetingAudioService.uploadAudio(meetingId, file, authentication.getName());
     }
 
+    @PostMapping("/reprocess")
+    public MeetingAudioResponse reprocessAudio(@PathVariable Long meetingId, Authentication authentication) {
+        return meetingAudioService.reprocessAudio(meetingId, authentication.getName());
+    }
+
     @GetMapping
     public MeetingAudioResponse getAudioMetadata(@PathVariable Long meetingId, Authentication authentication) {
         return meetingAudioService.getAudioMetadata(meetingId, authentication.getName());

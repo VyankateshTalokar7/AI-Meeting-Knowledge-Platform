@@ -44,8 +44,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleUniqueConstraint(DataIntegrityViolationException exception, HttpServletRequest request) {
-        return response(HttpStatus.CONFLICT, "An account with this email already exists.", request, Map.of());
+        return response(HttpStatus.CONFLICT, "A database integrity constraint was violated.", request, Map.of());
     }
+
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException exception, HttpServletRequest request) {
@@ -94,6 +95,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleUnexpectedError(Exception exception, HttpServletRequest request) {
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Unexpected error occurred:", exception);
         return response(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", request, Map.of());
     }
 

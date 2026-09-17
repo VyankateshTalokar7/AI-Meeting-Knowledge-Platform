@@ -1,7 +1,11 @@
 package com.aimeetingknowledge.platform.meeting;
 
+import com.aimeetingknowledge.platform.meeting.audio.AudioStorageService;
+import com.aimeetingknowledge.platform.meeting.audio.MeetingAudioRepository;
 import com.aimeetingknowledge.platform.meeting.dto.CreateMeetingRequest;
 import com.aimeetingknowledge.platform.meeting.dto.MeetingResponse;
+import com.aimeetingknowledge.platform.meeting.knowledge.MeetingKnowledgeRepository;
+import com.aimeetingknowledge.platform.meeting.transcript.MeetingTranscriptRepository;
 import com.aimeetingknowledge.platform.user.User;
 import com.aimeetingknowledge.platform.user.UserNotFoundException;
 import com.aimeetingknowledge.platform.user.UserRepository;
@@ -10,16 +14,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
 @Service
 public class MeetingService {
 
     private final MeetingRepository meetingRepository;
     private final UserRepository userRepository;
+    private final MeetingAudioRepository meetingAudioRepository;
+    private final AudioStorageService audioStorageService;
+    private final MeetingTranscriptRepository meetingTranscriptRepository;
+    private final MeetingKnowledgeRepository meetingKnowledgeRepository;
 
-    public MeetingService(MeetingRepository meetingRepository, UserRepository userRepository) {
+    public MeetingService(
+            MeetingRepository meetingRepository,
+            UserRepository userRepository,
+            MeetingAudioRepository meetingAudioRepository,
+            AudioStorageService audioStorageService,
+            MeetingTranscriptRepository meetingTranscriptRepository,
+            MeetingKnowledgeRepository meetingKnowledgeRepository
+    ) {
         this.meetingRepository = meetingRepository;
         this.userRepository = userRepository;
+        this.meetingAudioRepository = meetingAudioRepository;
+        this.audioStorageService = audioStorageService;
+        this.meetingTranscriptRepository = meetingTranscriptRepository;
+        this.meetingKnowledgeRepository = meetingKnowledgeRepository;
     }
 
     public MeetingResponse createMeeting(CreateMeetingRequest request, String email) {
@@ -40,8 +58,27 @@ public class MeetingService {
         return MeetingResponse.from(getOwnedMeeting(id, email));
     }
 
+    @Transactional
     public void deleteMeeting(Long id, String email) {
-        meetingRepository.delete(getOwnedMeeting(id, email));
+        Meeting meeting = getOwnedMeeting(id, email);
+
+        meetingAudioRepository.findByMeeting(meeting).ifPresent(audio -> {
+            audioStorageService.delete(audio.getStoredFilename());
+            meetingAudioRepository.delete(audio);
+            meetingAudioRepository.flush();
+        });
+
+        meetingTranscriptRepository.findByMeeting(meeting).ifPresent(transcript -> {
+            meetingTranscriptRepository.delete(transcript);
+            meetingTranscriptRepository.flush();
+        });
+
+        meetingKnowledgeRepository.findByMeeting(meeting).ifPresent(knowledge -> {
+            meetingKnowledgeRepository.delete(knowledge);
+            meetingKnowledgeRepository.flush();
+        });
+
+        meetingRepository.delete(meeting);
     }
 
     public Meeting getOwnedMeeting(Long id, String email) {
@@ -56,7 +93,6 @@ public class MeetingService {
         meeting.setStatus(status);
         meetingRepository.save(meeting);
     }
-
 
     private User currentUser(String email) {
         return userRepository.findByEmail(email)

@@ -87,7 +87,7 @@ class MeetingKnowledgeServiceTest {
 
     @Test
     void savesKnowledgeFromAnalysis() {
-        when(meetingKnowledgeRepository.existsByMeeting(meeting)).thenReturn(false);
+        when(meetingKnowledgeRepository.findByMeeting(meeting)).thenReturn(Optional.empty());
 
         MeetingAnalysisResponse analysis = new MeetingAnalysisResponse(
                 "Executive Summary",
@@ -125,12 +125,15 @@ class MeetingKnowledgeServiceTest {
     }
 
     @Test
-    void preventsDuplicateKnowledgeSave() {
-        when(meetingKnowledgeRepository.existsByMeeting(meeting)).thenReturn(true);
+    void replacesExistingKnowledgeOnSave() {
+        MeetingKnowledge existing = new MeetingKnowledge(meeting, "Old summary");
+        when(meetingKnowledgeRepository.findByMeeting(meeting)).thenReturn(Optional.of(existing));
 
-        MeetingAnalysisResponse analysis = new MeetingAnalysisResponse("Summary", List.of(), List.of(), List.of());
+        MeetingAnalysisResponse analysis = new MeetingAnalysisResponse("New summary", List.of(), List.of(), List.of());
         service.saveKnowledgeFromAnalysis(meeting, analysis);
 
-        verify(meetingKnowledgeRepository, never()).save(any());
+        verify(meetingKnowledgeRepository).delete(existing);
+        verify(meetingKnowledgeRepository).flush();
+        verify(meetingKnowledgeRepository).save(any());
     }
 }

@@ -72,6 +72,15 @@ export function deleteMeeting(token, id) {
   return authenticatedRequest(`/api/meetings/${id}`, token, { method: 'DELETE' })
 }
 
+export function getMeetingTranscript(token, meetingId) {
+  return authenticatedRequest(`/api/meetings/${meetingId}/transcript`, token)
+}
+
+export function getMeetingKnowledge(token, meetingId) {
+  return authenticatedRequest(`/api/meetings/${meetingId}/knowledge`, token)
+}
+
+
 export function getMeetingAudio(token, meetingId) {
   return authenticatedRequest(`/api/meetings/${meetingId}/audio`, token)
 }

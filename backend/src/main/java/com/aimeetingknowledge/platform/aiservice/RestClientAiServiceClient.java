@@ -8,6 +8,7 @@ import com.aimeetingknowledge.platform.aiservice.dto.SearchAiServiceRequest;
 import com.aimeetingknowledge.platform.aiservice.dto.SearchAiServiceResponse;
 import com.aimeetingknowledge.platform.aiservice.dto.TranscriptionResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -24,6 +25,7 @@ public class RestClientAiServiceClient implements AiServiceClient {
 
     private final RestClient restClient;
 
+    @Autowired
     public RestClientAiServiceClient(AiServiceProperties properties, RestClient.Builder restClientBuilder) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.connectTimeoutMs());

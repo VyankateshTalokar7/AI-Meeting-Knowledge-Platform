@@ -1,6 +1,13 @@
 package com.aimeetingknowledge.platform.meeting;
 
+import com.aimeetingknowledge.platform.meeting.audio.AudioStorageService;
+import com.aimeetingknowledge.platform.meeting.audio.MeetingAudio;
+import com.aimeetingknowledge.platform.meeting.audio.MeetingAudioRepository;
 import com.aimeetingknowledge.platform.meeting.dto.CreateMeetingRequest;
+import com.aimeetingknowledge.platform.meeting.knowledge.MeetingKnowledge;
+import com.aimeetingknowledge.platform.meeting.knowledge.MeetingKnowledgeRepository;
+import com.aimeetingknowledge.platform.meeting.transcript.MeetingTranscript;
+import com.aimeetingknowledge.platform.meeting.transcript.MeetingTranscriptRepository;
 import com.aimeetingknowledge.platform.user.User;
 import com.aimeetingknowledge.platform.user.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -17,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +38,18 @@ class MeetingServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private MeetingAudioRepository meetingAudioRepository;
+
+    @Mock
+    private AudioStorageService audioStorageService;
+
+    @Mock
+    private MeetingTranscriptRepository meetingTranscriptRepository;
+
+    @Mock
+    private MeetingKnowledgeRepository meetingKnowledgeRepository;
 
     @InjectMocks
     private MeetingService meetingService;
@@ -86,5 +106,29 @@ class MeetingServiceTest {
 
         assertThatThrownBy(() -> meetingService.deleteMeeting(99L, OWNER_EMAIL))
                 .isInstanceOf(MeetingNotFoundException.class);
+    }
+
+    @Test
+    void userCanDeleteOwnedMeetingAndChildEntities() {
+        User owner = new User("Owner", OWNER_EMAIL, "hash");
+        Meeting ownedMeeting = new Meeting(owner, "Meeting to delete", null, Instant.parse("2030-01-15T10:00:00Z"));
+        MeetingAudio audio = new MeetingAudio(ownedMeeting, "orig.wav", "stored.wav", "audio/wav", 100, "/path");
+        MeetingTranscript transcript = new MeetingTranscript(ownedMeeting, "Text", "en");
+        MeetingKnowledge knowledge = new MeetingKnowledge(ownedMeeting, "Summary");
+
+        when(userRepository.findByEmail(OWNER_EMAIL)).thenReturn(Optional.of(owner));
+        when(meetingRepository.findByIdAndUser(1L, owner)).thenReturn(Optional.of(ownedMeeting));
+        when(meetingAudioRepository.findByMeeting(ownedMeeting)).thenReturn(Optional.of(audio));
+        when(meetingTranscriptRepository.findByMeeting(ownedMeeting)).thenReturn(Optional.of(transcript));
+        when(meetingKnowledgeRepository.findByMeeting(ownedMeeting)).thenReturn(Optional.of(knowledge));
+
+        meetingService.deleteMeeting(1L, OWNER_EMAIL);
+
+        verify(audioStorageService).delete("stored.wav");
+        verify(meetingAudioRepository).delete(audio);
+        verify(meetingTranscriptRepository).delete(transcript);
+        verify(meetingKnowledgeRepository).delete(knowledge);
+        verify(meetingRepository).delete(ownedMeeting);
+        verify(userRepository, never()).delete(any());
     }
 }

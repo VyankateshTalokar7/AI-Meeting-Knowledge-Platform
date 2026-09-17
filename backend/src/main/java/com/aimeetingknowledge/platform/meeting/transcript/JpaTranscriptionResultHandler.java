@@ -21,6 +21,11 @@ public class JpaTranscriptionResultHandler implements TranscriptionResultHandler
     @Override
     @Transactional
     public void handleResult(Meeting meeting, TranscriptionResponse response) {
+        meetingTranscriptRepository.findByMeeting(meeting).ifPresent(existing -> {
+            meetingTranscriptRepository.delete(existing);
+            meetingTranscriptRepository.flush();
+        });
+
         MeetingTranscript transcript = new MeetingTranscript(
                 meeting,
                 response.text(),

@@ -2,6 +2,7 @@ import logging
 import json
 from abc import ABC, abstractmethod
 import httpx
+from fastapi import Depends
 from app.config import get_settings, Settings
 from app.schemas.analysis import MeetingAnalysisSchema
 
@@ -122,7 +123,16 @@ class OpenRouterLLMService(LLMService):
             if not content:
                 raise LLMError("LLM returned empty content.")
 
-            return MeetingAnalysisSchema.model_validate_json(content)
+            cleaned_content = content.strip()
+            if cleaned_content.startswith("```"):
+                lines = cleaned_content.splitlines()
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                cleaned_content = "\n".join(lines).strip()
+
+            return MeetingAnalysisSchema.model_validate_json(cleaned_content)
         except Exception as exc:
             logger.error("Failed to parse or validate LLM response structure: %s", exc)
             raise LLMError("LLM output did not match expected structured schema.") from exc
@@ -180,6 +190,5 @@ class OpenRouterLLMService(LLMService):
 
 
 
-def get_llm_service() -> LLMService:
-    settings = get_settings()
+def get_llm_service(settings: Settings = Depends(get_settings)) -> LLMService:
     return OpenRouterLLMService(settings)
