@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createMeeting, deleteMeeting, getCurrentUser, getMeetings, requestErrorMessage } from '../api/client.js'
+import SearchSection from '../components/SearchSection.jsx'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -73,6 +74,8 @@ export default function DashboardPage() {
       <h1>Welcome, {user.name}</h1>
       <p>{user.email}</p>
       <button onClick={logout} type="button">Log out</button>
+
+      <SearchSection token={localStorage.getItem('authToken')} />
 
       <section>
         <h2>Create meeting</h2>

@@ -113,3 +113,10 @@ export function uploadMeetingAudio(token, meetingId, file, onProgress) {
     xhr.send(formData)
   })
 }
+
+export function searchMeetings(token, query, topK = 5) {
+  return authenticatedRequest('/api/search', token, {
+    method: 'POST',
+    body: JSON.stringify({ query, top_k: topK }),
+  })
+}
