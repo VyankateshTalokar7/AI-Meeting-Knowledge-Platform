@@ -193,7 +193,7 @@ export default function DashboardPage() {
                         {getStatusBadge(meeting.status)}
                       </div>
                       <div className="meeting-meta">
-                        <span>📅 {new Date(meeting.meetingDate).toLocaleString()}</span>
+                        <span>{new Date(meeting.meetingDate).toLocaleString()}</span>
                         {meeting.description && <span>• {meeting.description.length > 50 ? `${meeting.description.substring(0, 50)}…` : meeting.description}</span>}
                       </div>
                     </div>

@@ -161,8 +161,8 @@ export default function MeetingDetailsPage() {
               {meeting.description || 'No description provided.'}
             </p>
             <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem' }}>
-              <span>📅 Meeting Date: {new Date(meeting.meetingDate).toLocaleString()}</span>
-              <span>🆔 ID: #{meeting.id}</span>
+              <span>Meeting Date: {new Date(meeting.meetingDate).toLocaleString()}</span>
+              <span>ID: #{meeting.id}</span>
             </div>
           </div>
 
@@ -175,7 +175,7 @@ export default function MeetingDetailsPage() {
 
         {/* Audio Recording Card */}
         <section className="card">
-          <h2 className="section-title">🎙️ Audio Recording</h2>
+          <h2 className="section-title">Audio Recording</h2>
           {audio ? (
             <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -229,7 +229,7 @@ export default function MeetingDetailsPage() {
         {knowledge && (
           <section className="card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <span className="badge" style={{ background: '#f0fdf4', color: '#047857', border: '1px solid #a7f3d0' }}>✨ AI Analysis</span>
+              <span className="badge" style={{ background: '#f0fdf4', color: '#047857', border: '1px solid #a7f3d0' }}>AI Analysis</span>
               <h2 className="section-title" style={{ margin: 0 }}>Structured Knowledge Extraction</h2>
             </div>
 
@@ -243,7 +243,7 @@ export default function MeetingDetailsPage() {
             <div className="knowledge-grid">
               {knowledge.keyTopics && knowledge.keyTopics.length > 0 && (
                 <div className="knowledge-box">
-                  <h4>📌 Key Topics</h4>
+                  <h4>Key Topics</h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {knowledge.keyTopics.map((topic, index) => (
                       <span key={index} className="badge badge-pill" style={{ background: '#ffffff', border: '1px solid var(--border-color)', padding: '0.35rem 0.75rem', fontSize: '0.8125rem' }}>
@@ -256,7 +256,7 @@ export default function MeetingDetailsPage() {
 
               {knowledge.decisions && knowledge.decisions.length > 0 && (
                 <div className="knowledge-box">
-                  <h4>✅ Key Decisions</h4>
+                  <h4>Key Decisions</h4>
                   <ul style={{ paddingLeft: '1.25rem', margin: 0, fontSize: '0.875rem', color: 'var(--text-main)' }}>
                     {knowledge.decisions.map((decision, index) => (
                       <li key={index} style={{ marginBottom: '0.5rem' }}>{decision}</li>
@@ -269,7 +269,7 @@ export default function MeetingDetailsPage() {
             {knowledge.actionItems && knowledge.actionItems.length > 0 && (
               <div style={{ marginTop: '1.25rem' }}>
                 <h4 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.75rem' }}>
-                  🎯 Action Items ({knowledge.actionItems.length})
+                  Action Items ({knowledge.actionItems.length})
                 </h4>
                 <ul className="action-items-list">
                   {knowledge.actionItems.map((item, index) => (
@@ -278,12 +278,12 @@ export default function MeetingDetailsPage() {
                       <div className="action-item-meta">
                         {item.assignee && (
                           <span className="badge" style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}>
-                            👤 {item.assignee}
+                            {item.assignee}
                           </span>
                         )}
                         {item.dueDate && (
                           <span className="badge" style={{ background: '#fff7ed', color: '#c2410c', border: '1px solid #ffedd5' }}>
-                            📅 Due: {item.dueDate}
+                            Due: {item.dueDate}
                           </span>
                         )}
                       </div>
@@ -299,7 +299,7 @@ export default function MeetingDetailsPage() {
         {transcript && (
           <section className="card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h2 className="section-title" style={{ margin: 0 }}>📝 Meeting Transcript</h2>
+              <h2 className="section-title" style={{ margin: 0 }}>Meeting Transcript</h2>
               {transcript.language && (
                 <span className="badge badge-pill">Language: {transcript.language.toUpperCase()}</span>
               )}
@@ -307,7 +307,7 @@ export default function MeetingDetailsPage() {
 
             {transcript.fullText && (
               <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                   Full Transcript Text
                 </h4>
                 <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: 'var(--radius-md)', whiteSpace: 'pre-wrap', fontSize: '0.9375rem', lineHeight: 1.6, maxHeight: '200px', overflowY: 'auto' }}>
@@ -318,7 +318,7 @@ export default function MeetingDetailsPage() {
 
             {transcript.segments && transcript.segments.length > 0 && (
               <div>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                   Timestamped Segments ({transcript.segments.length})
                 </h4>
                 <div className="transcript-segment-list">

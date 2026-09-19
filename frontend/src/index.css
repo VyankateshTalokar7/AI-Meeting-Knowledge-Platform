@@ -458,8 +458,7 @@ textarea.form-control {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--teal);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.025em;
   margin-bottom: 0.5rem;
 }
 
@@ -479,8 +478,7 @@ textarea.form-control {
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.025em;
   margin-bottom: 0.625rem;
 }
 

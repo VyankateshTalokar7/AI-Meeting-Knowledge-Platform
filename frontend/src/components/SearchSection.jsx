@@ -53,7 +53,7 @@ export default function SearchSection({ token }) {
   return (
     <section className="search-card">
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.25rem' }}>
-        <span className="badge" style={{ background: '#d1fae5', color: '#047857', border: '1px solid #6ee7b7' }}>⚡ AI RAG Search</span>
+        <span className="badge" style={{ background: '#d1fae5', color: '#047857', border: '1px solid #6ee7b7' }}>Knowledge Search</span>
         <h2 className="section-title" style={{ margin: 0 }}>Search Meeting Knowledge Base</h2>
       </div>
       <p className="section-subtitle" style={{ marginBottom: '1rem' }}>
@@ -96,19 +96,19 @@ export default function SearchSection({ token }) {
       {searching && (
         <div style={{ marginTop: '1.5rem', textAlign: 'center', padding: '1.5rem', background: '#ffffff', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
           <p style={{ color: 'var(--teal)', fontWeight: 600, fontSize: '0.9375rem' }}>
-            🔍 Embedding query & searching ChromaDB vector index…
+            Searching knowledge base...
           </p>
         </div>
       )}
 
       {result && (
         <div className="answer-card">
-          <div className="answer-header">🤖 AI Generated Answer</div>
+          <div className="answer-header">Generated Answer</div>
           <p className="answer-text">{renderFormattedText(result.answer)}</p>
 
           {result.references && result.references.length > 0 && (
             <div className="references-container">
-              <div className="references-title">📌 Retrieved Sources & Grounded References</div>
+              <div className="references-title">Sources & References</div>
               <ul className="reference-list">
                 {result.references.map((ref, idx) => (
                   <li key={idx} className="reference-tag">
