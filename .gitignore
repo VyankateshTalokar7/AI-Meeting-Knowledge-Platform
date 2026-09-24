@@ -30,3 +30,8 @@ __pycache__/
 *$py.class
 .pytest_cache/
 ai-service/data/
+
+# Audio test recordings
+*.aiff
+*.wav
+
