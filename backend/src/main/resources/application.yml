@@ -41,6 +41,6 @@ app:
       - audio/mp4
       - audio/webm
   ai-service:
-    url: ${AI_SERVICE_URL:http://localhost:8000}
+    url: ${AI_SERVICE_URL:http://127.0.0.1:8000}
     connect-timeout-ms: ${AI_SERVICE_CONNECT_TIMEOUT_MS:5000}
     read-timeout-ms: ${AI_SERVICE_READ_TIMEOUT_MS:120000}

@@ -303,12 +303,32 @@ class VectorStoreService:
                 end_time=meta.get("end_time"),
             ))
 
-        if llm_service is not None:
-            answer = await llm_service.generate_rag_answer(query=query, context=context_str)
-        else:
-            from app.services.llm_service import get_llm_service
-            svc = get_llm_service()
-            answer = await svc.generate_rag_answer(query=query, context=context_str)
+        from app.services.llm_service import LLMError
+
+        try:
+            if llm_service is not None:
+                answer = await llm_service.generate_rag_answer(query=query, context=context_str)
+            else:
+                from app.services.llm_service import get_llm_service
+                svc = get_llm_service()
+                answer = await svc.generate_rag_answer(query=query, context=context_str)
+        except LLMError as exc:
+            transient_messages = {
+                "LLM API request timed out.",
+                "Failed to communicate with LLM provider.",
+            }
+            transient_statuses = (408, 429, 500, 502, 503, 504)
+            is_transient_status = any(
+                str(exc) == f"LLM API returned HTTP status {status}."
+                for status in transient_statuses
+            )
+            if str(exc) not in transient_messages and not is_transient_status:
+                raise
+
+            # Retrieval already succeeded. Keep search useful during a transient
+            # LLM-provider failure without presenting an invented answer.
+            logger.warning("RAG answer generation failed; returning retrieved context: %s", exc)
+            answer = "The AI answer service is temporarily unavailable. Relevant meeting context: " + retrieved_chunks[0]["text"]
 
         return SearchResponse(
             answer=answer,
